@@ -672,9 +672,27 @@ a.album-lnk.youtube:hover { color: #c4302b; border-color: #c4302b; }
   font-family: 'IBM Plex Mono', monospace;
   transition: color 0.15s;
   -webkit-tap-highlight-color: transparent;
+  position: relative;
 }
 
 .bottom-nav-btn.active { color: var(--accent); }
+
+/* Red indicator bar on top of active tab */
+.bottom-nav-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transition: transform 0.2s ease;
+}
+
+.bottom-nav-btn.active::before {
+  transform: scaleX(1);
+}
 
 .bottom-nav-btn svg {
   width: 20px;
@@ -684,6 +702,31 @@ a.album-lnk.youtube:hover { color: #c4302b; border-color: #c4302b; }
   stroke-width: 1.5;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+/* Favorites count badge */
+.bn-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent);
+  color: #fff;
+  font-size: 8px;
+  font-weight: 500;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  line-height: 1;
+  margin-left: 3px;
+  opacity: 0;
+  transform: scale(0.7);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.bn-badge.visible {
+  opacity: 1;
+  transform: scale(1);
 }
 
 .bottom-nav-divider {
@@ -740,7 +783,7 @@ a.album-lnk.youtube:hover { color: #c4302b; border-color: #c4302b; }
   <div class="bottom-nav-divider"></div>
   <button class="bottom-nav-btn" id="bnFavs" onclick="mobileTab('favs')">
     <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-    Favoris <span id="bnFavCount"></span>
+    Favoris <span class="bn-badge" id="bnFavCount"></span>
   </button>
 </nav>
 
@@ -833,7 +876,10 @@ function renderFavs() {
     badge.classList.toggle('has-favs', S.favs.length > 0);
   }
   const bnBadge = document.getElementById('bnFavCount');
-  if (bnBadge) bnBadge.textContent = S.favs.length ? ` (${S.favs.length})` : '';
+  if (bnBadge) {
+    bnBadge.textContent = S.favs.length || '';
+    bnBadge.classList.toggle('visible', S.favs.length > 0);
+  }
   if (!S.favs.length) {
     el.innerHTML = '<div class="status-note">Aucun favori pour le moment.<br>Cliquez sur ☆ pour en ajouter.</div>';
     return;
@@ -1000,7 +1046,7 @@ function renderDisco(id, name, genre, art, albums, isWiki = false) {
             const price = a.collectionPrice ? `${a.collectionPrice.toFixed(2)} ${a.currency||'€'}` : '';
             const link = a.collectionViewUrl || '';
             const ytQuery = encodeURIComponent(`${name} ${a.collectionName}`);
-            const ytLink = `https://www.youtube.com/results?search_query=${ytQuery}`;
+            const ytLink = `https://music.youtube.com/search?q=${ytQuery}`;
             return `
               <div class="album-card${isPreRelease ? ' pre-release' : ''}">
                 <div class="album-art-wrap">
@@ -1016,7 +1062,7 @@ function renderDisco(id, name, genre, art, albums, isWiki = false) {
                   ${price ? `<div class="album-price">${price}</div>` : ''}
                   <div class="album-links">
                     ${link ? `<a class="album-lnk itunes" href="${link}" target="_blank" rel="noopener">↗ iTunes</a>` : ''}
-                    <a class="album-lnk youtube" href="${ytLink}" target="_blank" rel="noopener">↗ YouTube</a>
+                    <a class="album-lnk youtube" href="${ytLink}" target="_blank" rel="noopener">↗ YT Music</a>
                   </div>
                 </div>
               </div>`;
