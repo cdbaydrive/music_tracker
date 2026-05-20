@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Music Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f4f0e8;
+  --surface: #ede9e0;
+  --surface2: #e5e0d4;
+  --ink: #1a1714;
+  --ink2: #4a4540;
+  --muted: #9a9088;
+  --rule: #ccc8c0;
+  --accent: #c0392b;
+  --green: #1a6b3c;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* —— MASTHEAD —— */
+header {
+  border-bottom: 3px double var(--rule);
+  padding: 18px 28px 14px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  background: var(--bg);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.masthead-left { display: flex; align-items: baseline; gap: 16px; }
+
+header h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 32px;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  color: var(--ink);
+  line-height: 1;
+}
+
+header .sub {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border-left: 1px solid var(--rule);
+  padding-left: 14px;
+}
+
+header .edition {
+  font-size: 10px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* —— LAYOUT —— */
+.layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  height: calc(100vh - 65px);
+}
+
+/* —— SIDEBAR —— */
+aside {
+  border-right: 1px solid var(--rule);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--surface);
+}
+
+/* .search-box defined in tabs section below */
+
+.search-row { display: flex; border: 1px solid var(--ink); }
+
+.search-row input {
+  flex: 1;
+  background: #fff;
+  border: none;
+  outline: none;
+  padding: 8px 10px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--ink);
+  min-width: 0;
+}
+
+.search-row input::placeholder { color: var(--muted); }
+
+.btn-go {
+  background: var(--ink);
+  color: var(--bg);
+  border: none;
+  padding: 0 14px;
+  font-family: 'Playfair Display', serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.btn-go:hover { background: var(--accent); }
+.btn-go:disabled { background: var(--muted); cursor: default; }
+
+.side-scroll {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule) transparent;
+}
+
+.side-label {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 10px 16px 6px;
+  border-bottom: 1px solid var(--rule);
+  background: var(--surface2);
+  position: sticky;
+  top: 0;
+}
+
+.artist-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  border-bottom: 1px solid #ddd9d0;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.artist-row:hover { background: var(--surface2); }
+.artist-row.active { background: #e8e0d0; }
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  background: var(--rule);
+  overflow: hidden;
+}
+
+.avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.artist-info { min-width: 0; flex: 1; }
+
+.artist-name {
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.artist-meta {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn-fav {
+  background: none;
+  border: 1px solid var(--rule);
+  color: var(--muted);
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.15s;
+}
+
+.btn-fav:hover { border-color: var(--accent); color: var(--accent); }
+.btn-fav.saved { border-color: var(--accent); color: var(--accent); background: #f8e8e6; }
+
+.status-note { padding: 10px 16px; color: var(--muted); font-size: 11px; font-style: italic; }
+.status-note.err { color: var(--accent); font-style: normal; }
+
+/* —— MAIN —— */
+main {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule) transparent;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--muted);
+  gap: 10px;
+}
+
+.empty-state .big { font-size: 48px; font-family: 'Playfair Display', serif; opacity: 0.4; }
+.empty-state p { font-size: 11px; letter-spacing: 0.06em; }
+
+/* —— ARTIST HEADER —— */
+.artist-head {
+  display: flex;
+  gap: 0;
+  border-bottom: 3px double var(--rule);
+}
+
+.artist-thumb {
+  width: 150px;
+  height: 150px;
+  object-fit: cover;
+  border-right: 1px solid var(--rule);
+  display: block;
+  flex-shrink: 0;
+}
+
+.artist-thumb-ph {
+  width: 150px;
+  height: 150px;
+  background: var(--surface2);
+  border-right: 1px solid var(--rule);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  color: var(--rule);
+  flex-shrink: 0;
+}
+
+.artist-head-info {
+  padding: 22px 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.artist-head-info h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 46px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -1px;
+}
+
+.meta-line {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+}
+
+.source-badge {
+  font-size: 9px;
+  color: var(--muted);
+  border: 1px solid var(--rule);
+  padding: 1px 6px;
+  letter-spacing: 0.1em;
+  opacity: 0.7;
+}
+
+.pill {
+  background: var(--ink);
+  color: var(--bg);
+  padding: 2px 8px;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.pbar { height: 2px; background: var(--surface2); overflow: hidden; }
+.pbar-in {
+  height: 100%;
+  background: var(--accent);
+  width: 25%;
+  animation: sweep 0.9s ease-in-out infinite;
+}
+@keyframes sweep {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(450%); }
+}
+
+/* —— DISCOGRAPHY —— */
+.disco-wrap { padding: 24px 28px; }
+
+.disco-heading {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 8px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.type-block { margin-bottom: 30px; }
+
+.type-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.type-count { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); font-weight: 400; }
+
+.album-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 16px;
+}
+
+.album-card {
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  transition: background 0.12s, box-shadow 0.12s;
+  overflow: hidden;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.album-card:hover {
+  background: #fffdf8;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.13);
+}
+
+.album-art {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  display: block;
+  background: var(--surface2);
+  border-radius: 6px 6px 0 0;
+}
+
+.album-art-ph {
+  width: 100%;
+  aspect-ratio: 1;
+  background: var(--surface2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--rule);
+  font-size: 28px;
+  border-radius: 6px 6px 0 0;
+}
+
+.album-body { padding: 10px 12px; border-top: 1px solid var(--rule); }
+
+.album-title { font-size: 11px; font-weight: 500; line-height: 1.3; margin-bottom: 4px; }
+.album-year { font-size: 11px; color: var(--accent); font-weight: 500; }
+.album-info { font-size: 10px; color: var(--muted); margin-top: 2px; }
+.album-price { font-size: 10px; color: var(--green); margin-top: 2px; }
+
+.album-links {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+a.album-lnk {
+  font-size: 10px;
+  text-decoration: none;
+  border-bottom: 1px solid var(--rule);
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+a.album-lnk.itunes { color: var(--muted); }
+a.album-lnk.itunes:hover { color: var(--accent); border-color: var(--accent); }
+
+a.album-lnk.youtube { color: var(--muted); }
+a.album-lnk.youtube:hover { color: #c4302b; border-color: #c4302b; }
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-thumb { background: var(--rule); }
+
+/* —— TABS —— */
+.side-tabs {
+  display: flex;
+  border-bottom: 2px solid var(--rule);
+  background: var(--surface2);
+  flex-shrink: 0;
+}
+
+.side-tab {
+  flex: 1;
+  padding: 10px 8px;
+  text-align: center;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: color 0.15s, border-color 0.15s;
+  user-select: none;
+}
+
+.side-tab:hover { color: var(--ink); }
+.side-tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
+
+.side-tab #fav-count {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  font-size: 9px;
+  padding: 0 5px;
+  margin-left: 4px;
+  border-radius: 0;
+  line-height: 14px;
+  vertical-align: middle;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.side-tab #fav-count.has-favs { opacity: 1; }
+
+.side-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
+.search-box { padding: 14px 16px; border-bottom: 1px solid var(--rule); flex-shrink: 0; }
+
+#panel-search .side-scroll,
+#panel-favs .side-scroll {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* —— PRE-RELEASE —— */
+.album-art-wrap {
+  position: relative;
+  overflow: hidden;
+  border-radius: 6px 6px 0 0;
+}
+
+.album-card.pre-release {
+  background: #fffff8;
+  border: 1.5px solid #c8a800;
+  box-shadow: 0 2px 10px rgba(200,168,0,0.18);
+}
+
+.album-card.pre-release:hover {
+  background: #fffff0;
+  box-shadow: 0 4px 18px rgba(200,168,0,0.28);
+}
+
+.album-card.pre-release .album-art {
+  opacity: 0.85;
+}
+
+.prerelease-badge {
+  position: absolute;
+  top: 10px;
+  left: 0;
+  background: #c8a800;
+  color: #fff;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  padding: 3px 10px 3px 8px;
+  clip-path: polygon(0 0, 100% 0, 92% 100%, 0 100%);
+  pointer-events: none;
+}
+
+.upcoming-date {
+  color: #a07800 !important;
+  font-weight: 600;
+}
+
+/* ================================================
+   RESPONSIVE — MOBILE
+   ================================================ */
+@media (max-width: 767px) {
+
+  /* Header */
+  header {
+    padding: 12px 16px 10px;
+    border-bottom: 2px solid var(--rule);
+  }
+  header h1 { font-size: 22px; }
+  header .sub { display: none; }
+  header .edition { display: none; }
+
+  /* Layout : single column, full height minus header + bottom nav */
+  .layout {
+    grid-template-columns: 1fr;
+    height: calc(100vh - 52px - 56px); /* header + bottom nav */
+    position: relative;
+  }
+
+  /* Sidebar : full width, shown/hidden via JS */
+  aside {
+    border-right: none;
+    border-bottom: 1px solid var(--rule);
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    transition: transform 0.25s ease, opacity 0.25s ease;
+  }
+
+  aside.mobile-hidden {
+    transform: translateX(-100%);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* Hide the sidebar tabs on mobile (replaced by bottom nav) */
+  .side-tabs { display: none; }
+
+  /* Both panels always visible on mobile (only one shown at a time via JS) */
+  #panel-search, #panel-favs {
+    display: flex !important;
+    position: absolute;
+    inset: 0;
+    transition: transform 0.22s ease, opacity 0.22s ease;
+  }
+
+  #panel-favs.mobile-tab-hidden {
+    transform: translateX(100%);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  #panel-search.mobile-tab-hidden {
+    transform: translateX(-100%);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* Main : full width, shown/hidden via JS */
+  main {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    transition: transform 0.25s ease, opacity 0.25s ease;
+  }
+
+  main.mobile-hidden {
+    transform: translateX(100%);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* Back button in artist header */
+  .btn-back {
+    display: flex !important;
+  }
+
+  /* Artist header : stacked */
+  .artist-head {
+    flex-direction: column;
+  }
+
+  .artist-thumb {
+    width: 100%;
+    height: 200px;
+    border-right: none;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .artist-thumb-ph {
+    width: 100%;
+    height: 120px;
+    border-right: none;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .artist-head-info {
+    padding: 14px 16px;
+  }
+
+  .artist-head-info h2 {
+    font-size: 32px;
+  }
+
+  /* Disco */
+  .disco-wrap { padding: 16px; }
+
+  .album-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  /* Bottom nav */
+  .bottom-nav {
+    display: flex !important;
+  }
+}
+
+/* Back button — hidden on desktop */
+.btn-back {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px 0;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+}
+
+.btn-back:hover { color: var(--ink); }
+
+/* Bottom nav — hidden on desktop */
+.bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  background: var(--bg);
+  border-top: 2px solid var(--rule);
+  z-index: 200;
+}
+
+.bottom-nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: 'IBM Plex Mono', monospace;
+  transition: color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bottom-nav-btn.active { color: var(--accent); }
+
+.bottom-nav-btn svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.bottom-nav-divider {
+  width: 1px;
+  background: var(--rule);
+  margin: 12px 0;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="masthead-left">
+    <h1>♩ Music Tracker</h1>
+    <span class="sub">iTunes Catalog</span>
+  </div>
+  <span class="edition" id="todayDate"></span>
+</header>
+
+<div class="layout">
+  <aside>
+    <div class="side-tabs">
+      <div class="side-tab active" id="tab-search" onclick="switchTab('search')">Recherche</div>
+      <div class="side-tab" id="tab-favs" onclick="switchTab('favs')">Favoris <span id="fav-count"></span></div>
+    </div>
+    <div id="panel-search" class="side-panel">
+      <div class="search-box">
+        <div class="search-row">
+          <input type="text" id="searchInput" placeholder="Artiste, groupe…" autocomplete="off">
+          <button class="btn-go" id="btnGo" onclick="doSearch()">Search</button>
+        </div>
+      </div>
+      <div class="side-scroll" id="resultList"></div>
+    </div>
+    <div id="panel-favs" class="side-panel" style="display:none">
+      <div class="side-scroll" id="favList"></div>
+    </div>
+  </aside>
+
+  <main id="mainPanel">
+    <div class="empty-state">
+      <div class="big">♩</div>
+      <p>Recherchez un artiste pour démarrer</p>
+    </div>
+  </main>
+</div>
+
+<!-- Bottom nav (mobile only) -->
+<nav class="bottom-nav" id="bottomNav">
+  <button class="bottom-nav-btn active" id="bnSearch" onclick="mobileTab('search')">
+    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>
+    Recherche
+  </button>
+  <div class="bottom-nav-divider"></div>
+  <button class="bottom-nav-btn" id="bnFavs" onclick="mobileTab('favs')">
+    <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    Favoris <span id="bnFavCount"></span>
+  </button>
+</nav>
+
+<script>
+// ——— STATE ———
+const LS_KEY = 'music-tracker-favs';
+function loadFavs() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); } catch { return []; }
+}
+function saveFavs() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(S.favs)); } catch {}
+}
+const S = { favs: loadFavs(), results: [], active: null };
+
+// ——— API ———
+async function itunesFetch(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
+async function searchArtists(term) {
+  const d = await itunesFetch(
+    `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=musicArtist&limit=12`
+  );
+  return d.results || [];
+}
+
+async function fetchAlbums(artistId) {
+  const d = await itunesFetch(
+    `https://itunes.apple.com/lookup?id=${artistId}&entity=album&limit=200`
+  );
+  return (d.results || []).filter(r => r.wrapperType === 'collection');
+}
+
+async function fetchWikiThumb(name) {
+  try {
+    const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(name)}`;
+    const r = await fetch(url, { headers: { 'Accept': 'application/json' } });
+    if (!r.ok) return null;
+    const d = await r.json();
+    return d.thumbnail ? d.thumbnail.source : null;
+  } catch { return null; }
+}
+
+// ——— SEARCH ———
+async function doSearch() {
+  const q = document.getElementById('searchInput').value.trim();
+  if (!q) return;
+  const btn = document.getElementById('btnGo');
+  btn.disabled = true; btn.textContent = '…';
+  setResultList('<div class="status-note">Recherche…</div>');
+  try {
+    S.results = await searchArtists(q);
+    renderResults();
+  } catch(e) {
+    setResultList(`<div class="status-note err">Erreur réseau : ${e.message}</div>`);
+  }
+  btn.disabled = false; btn.textContent = 'Search';
+}
+
+function renderResults() {
+  if (!S.results.length) { setResultList('<div class="status-note">Aucun résultat.</div>'); return; }
+  setResultList(
+    `<div class="side-label">Résultats (${S.results.length})</div>` +
+    S.results.map(a => rowHtml(a.artistId, a.artistName, a.primaryGenreName, a.artworkUrl100)).join('')
+  );
+}
+
+// ——— FAVORITES ———
+function toggleFav(id, name, genre, art) {
+  id = Number(id);
+  const idx = S.favs.findIndex(f => f.id === id);
+  const wasEmpty = S.favs.length === 0;
+  if (idx === -1) {
+    S.favs.push({ id, name, genre, art });
+    if (wasEmpty) switchTab('favs');
+  } else {
+    S.favs.splice(idx, 1);
+  }
+  saveFavs();
+  renderFavs(); renderResults();
+}
+
+function renderFavs() {
+  const el = document.getElementById('favList');
+  const badge = document.getElementById('fav-count');
+  if (badge) {
+    badge.textContent = S.favs.length || '';
+    badge.classList.toggle('has-favs', S.favs.length > 0);
+  }
+  const bnBadge = document.getElementById('bnFavCount');
+  if (bnBadge) bnBadge.textContent = S.favs.length ? ` (${S.favs.length})` : '';
+  if (!S.favs.length) {
+    el.innerHTML = '<div class="status-note">Aucun favori pour le moment.<br>Cliquez sur ☆ pour en ajouter.</div>';
+    return;
+  }
+  el.innerHTML =
+    `<div class="side-label">Favoris (${S.favs.length})</div>` +
+    S.favs.map(f => rowHtml(f.id, f.name, f.genre, f.art)).join('');
+}
+
+function isMobile() { return window.innerWidth < 768; }
+
+function switchTab(tab) {
+  const isSearch = tab === 'search';
+  // Desktop sidebar tabs
+  document.getElementById('tab-search').classList.toggle('active', isSearch);
+  document.getElementById('tab-favs').classList.toggle('active', !isSearch);
+  if (!isMobile()) {
+    document.getElementById('panel-search').style.display = isSearch ? 'flex' : 'none';
+    document.getElementById('panel-favs').style.display = isSearch ? 'none' : 'flex';
+  }
+  if (isSearch) document.getElementById('searchInput').focus();
+}
+
+function mobileTab(tab) {
+  if (!isMobile()) return;
+  const isSearch = tab === 'search';
+  document.getElementById('bnSearch').classList.toggle('active', isSearch);
+  document.getElementById('bnFavs').classList.toggle('active', !isSearch);
+  document.getElementById('panel-search').classList.toggle('mobile-tab-hidden', !isSearch);
+  document.getElementById('panel-favs').classList.toggle('mobile-tab-hidden', isSearch);
+  // Show sidebar, hide main
+  document.querySelector('aside').classList.remove('mobile-hidden');
+  document.getElementById('mainPanel').classList.add('mobile-hidden');
+}
+
+function mobileShowArtist() {
+  if (!isMobile()) return;
+  document.querySelector('aside').classList.add('mobile-hidden');
+  document.getElementById('mainPanel').classList.remove('mobile-hidden');
+}
+
+function mobileBack() {
+  if (!isMobile()) return;
+  document.querySelector('aside').classList.remove('mobile-hidden');
+  document.getElementById('mainPanel').classList.add('mobile-hidden');
+}
+
+function rowHtml(id, name, genre, art) {
+  const saved = S.favs.some(f => f.id === Number(id));
+  const active = S.active === Number(id) ? ' active' : '';
+  const artSm = art ? art.replace(/\d+x\d+bb/, '60x60bb') : '';
+  return `
+    <div class="artist-row${active}" onclick="loadArtist(${id},'${q(name)}','${q(genre)}','${q(art)}')">
+      <div class="avatar">${artSm ? `<img src="${artSm}" alt="">` : ''}</div>
+      <div class="artist-info">
+        <div class="artist-name">${h(name)}</div>
+        <div class="artist-meta">${h(genre)}</div>
+      </div>
+      <button class="btn-fav ${saved?'saved':''}"
+        onclick="event.stopPropagation();toggleFav(${id},'${q(name)}','${q(genre)}','${q(art)}')"
+        title="${saved?'Retirer':'Ajouter'}">${saved?'★':'☆'}</button>
+    </div>`;
+}
+
+// ——— LOAD ARTIST ———
+async function loadArtist(id, name, genre, art) {
+  id = Number(id);
+  S.active = id;
+  renderFavs(); renderResults();
+  mobileShowArtist();
+
+  const artBig = art ? art.replace(/\d+x\d+bb/, '150x150bb') : '';
+  const thumbHtml = artBig
+    ? `<img class="artist-thumb" src="${artBig}" alt="${h(name)}">`
+    : `<div class="artist-thumb-ph">♪</div>`;
+
+  document.getElementById('mainPanel').innerHTML = `
+    <div class="artist-head">
+      ${thumbHtml}
+      <div class="artist-head-info">
+        <button class="btn-back" onclick="mobileBack()">← Retour</button>
+        <h2>${h(name)}</h2>
+        <div class="meta-line">
+          ${genre ? `<span class="pill">${h(genre)}</span>` : ''}
+          <span>Chargement…</span>
+        </div>
+      </div>
+    </div>
+    <div class="pbar"><div class="pbar-in"></div></div>`;
+
+  try {
+    const [albums, wikiThumb] = await Promise.all([
+      fetchAlbums(id),
+      fetchWikiThumb(name)
+    ]);
+    const finalArt = wikiThumb || art;
+    renderDisco(id, name, genre, finalArt, albums, !!wikiThumb);
+  } catch(e) {
+    document.getElementById('mainPanel').innerHTML +=
+      `<div class="disco-wrap"><div class="status-note err">Erreur : ${e.message}</div></div>`;
+  }
+}
+
+// ——— RENDER DISCOGRAPHY ———
+function renderDisco(id, name, genre, art, albums, isWiki = false) {
+  const groups = {};
+  for (const a of albums) {
+    let type = a.collectionType || 'Album';
+    // Heuristic: short track count → EP
+    if (type === 'Album' && a.trackCount && a.trackCount <= 6) type = 'EP';
+    (groups[type] = groups[type] || []).push(a);
+  }
+  for (const t in groups)
+    groups[t].sort((a, b) => new Date(b.releaseDate||0) - new Date(a.releaseDate||0));
+
+  const order = ['Album','EP','Single','Compilation','Music Video'];
+  const types = [...order.filter(t => groups[t]), ...Object.keys(groups).filter(t => !order.includes(t))];
+
+  // Wiki thumbs are already sized URLs; iTunes URLs need the bb replacement
+  const artBig = art
+    ? (isWiki ? art : art.replace(/\d+x\d+bb/, '150x150bb'))
+    : '';
+  const thumbHtml = artBig
+    ? `<img class="artist-thumb" src="${artBig}" alt="${h(name)}">`
+    : `<div class="artist-thumb-ph">♪</div>`;
+
+  let html = `
+    <div class="artist-head">
+      ${thumbHtml}
+      <div class="artist-head-info">
+        <button class="btn-back" onclick="mobileBack()">← Retour</button>
+        <h2>${h(name)}</h2>
+        <div class="meta-line">
+          ${genre ? `<span class="pill">${h(genre)}</span>` : ''}
+          <span>${albums.length} sorties dans le catalogue iTunes</span>
+          ${isWiki ? `<span class="source-badge">photo Wikipedia</span>` : ''}
+        </div>
+      </div>
+    </div>
+    <div class="disco-wrap">
+      <div class="disco-heading">
+        <span>Discographie</span>
+        <span>${new Date().toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})}</span>
+      </div>`;
+
+  for (const type of types) {
+    const items = groups[type];
+    html += `
+      <div class="type-block">
+        <div class="type-title">
+          ${type === 'EP' ? 'EPs' : type + 's'}
+          <span class="type-count">${items.length}</span>
+        </div>
+        <div class="album-grid">
+          ${items.map(a => {
+            const artUrl = (a.artworkUrl100||'').replace(/\d+x\d+bb/, '300x300bb');
+            const releaseDate = a.releaseDate ? new Date(a.releaseDate) : null;
+            const isPreRelease = releaseDate && releaseDate > new Date();
+            const dateLabel = releaseDate
+              ? releaseDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+              : '—';
+            const tracks = a.trackCount ? `${a.trackCount} titres` : '';
+            const explicit = a.collectionExplicitness === 'explicit' ? ' · explicit' : '';
+            const price = a.collectionPrice ? `${a.collectionPrice.toFixed(2)} ${a.currency||'€'}` : '';
+            const link = a.collectionViewUrl || '';
+            const ytQuery = encodeURIComponent(`${name} ${a.collectionName}`);
+            const ytLink = `https://www.youtube.com/results?search_query=${ytQuery}`;
+            return `
+              <div class="album-card${isPreRelease ? ' pre-release' : ''}">
+                <div class="album-art-wrap">
+                  ${artUrl
+                    ? `<img class="album-art" src="${artUrl}" alt="${h(a.collectionName)}" loading="lazy">`
+                    : `<div class="album-art-ph">♫</div>`}
+                  ${isPreRelease ? `<div class="prerelease-badge">PRÉ-SORTIE</div>` : ''}
+                </div>
+                <div class="album-body">
+                  <div class="album-title">${h(a.collectionName)}</div>
+                  <div class="album-year${isPreRelease ? ' upcoming-date' : ''}">${isPreRelease ? '⏰ ' : ''}${dateLabel}</div>
+                  ${tracks ? `<div class="album-info">${tracks}${explicit}</div>` : ''}
+                  ${price ? `<div class="album-price">${price}</div>` : ''}
+                  <div class="album-links">
+                    ${link ? `<a class="album-lnk itunes" href="${link}" target="_blank" rel="noopener">↗ iTunes</a>` : ''}
+                    <a class="album-lnk youtube" href="${ytLink}" target="_blank" rel="noopener">↗ YouTube</a>
+                  </div>
+                </div>
+              </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+  }
+
+  if (!albums.length)
+    html += `<div class="status-note">Aucune sortie trouvée dans le catalogue iTunes.</div>`;
+
+  html += `</div>`;
+  document.getElementById('mainPanel').innerHTML = html;
+}
+
+// ——— UTILS ———
+function h(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function q(s) {
+  if (!s) return '';
+  return String(s).replace(/'/g,"\\'").replace(/\n/g,'');
+}
+function setResultList(html) { document.getElementById('resultList').innerHTML = html; }
+
+// ——— INIT ———
+renderFavs();
+
+// Mobile: init panel visibility
+if (isMobile()) {
+  document.getElementById('panel-favs').classList.add('mobile-tab-hidden');
+  document.getElementById('mainPanel').classList.add('mobile-hidden');
+}
+
+document.getElementById('todayDate').textContent =
+  new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+document.getElementById('searchInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doSearch();
+});
+</script>
+</body>
+</html>
